@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { AnalysisResult } from './types'
 
-// 後端 API 網址
+// 後端 API 網址 - Production
 const API_BASE = 'https://valuation-agent-1.onrender.com/api'
 
 // 創建 axios 實例
