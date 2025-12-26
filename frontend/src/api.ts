@@ -1,10 +1,8 @@
 import axios from 'axios'
 import type { AnalysisResult } from './types'
 
-// 生產環境使用環境變數，開發環境使用 proxy
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api'
+// 後端 API 網址
+const API_BASE = 'https://valuation-agent-1.onrender.com/api'
 
 // 創建 axios 實例
 const apiClient = axios.create({
