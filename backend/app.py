@@ -29,6 +29,40 @@ def health_check():
     return jsonify({'status': 'healthy', 'message': 'Valuation Agent API is running'})
 
 
+def get_demo_data(ticker):
+    """返回模擬數據用於展示"""
+    demo_stocks = {
+        'DEMO': {
+            'ticker': 'DEMO',
+            'company_name': 'Demo Company Inc.',
+            'sector': 'Technology',
+            'industry': 'Software',
+            'current_price': 150.00,
+            'market_cap': 2500000000000,
+            'beta': 1.2,
+        },
+        'AAPL': {
+            'ticker': 'AAPL',
+            'company_name': 'Apple Inc.',
+            'sector': 'Technology',
+            'industry': 'Consumer Electronics',
+            'current_price': 195.00,
+            'market_cap': 3000000000000,
+            'beta': 1.25,
+        },
+        'MSFT': {
+            'ticker': 'MSFT',
+            'company_name': 'Microsoft Corporation',
+            'sector': 'Technology',
+            'industry': 'Software',
+            'current_price': 425.00,
+            'market_cap': 3150000000000,
+            'beta': 0.9,
+        }
+    }
+    return demo_stocks.get(ticker, demo_stocks['DEMO'])
+
+
 @app.route('/api/analyze', methods=['POST'])
 def analyze_stock():
     """
@@ -38,13 +72,71 @@ def analyze_stock():
     try:
         data = request.get_json()
         ticker = data.get('ticker', '').upper().strip()
+        use_demo = data.get('demo', False) or ticker == 'DEMO'
 
         if not ticker:
             return jsonify({'error': '請提供股票代碼'}), 400
 
+        # Demo 模式 - 返回模擬報告
+        if use_demo:
+            demo_info = get_demo_data(ticker if ticker != 'DEMO' else 'DEMO')
+            return jsonify({
+                'basic_info': {
+                    'ticker': demo_info['ticker'],
+                    'company_name': demo_info['company_name'],
+                    'sector': demo_info['sector'],
+                    'industry': demo_info['industry'],
+                    'currency': 'USD',
+                    'current_price': demo_info['current_price'],
+                    'market_cap': demo_info['market_cap'],
+                },
+                'key_metrics': {
+                    'pe_ratio': 28.5,
+                    'pb_ratio': 12.3,
+                    'ps_ratio': 7.8,
+                    'ev_ebitda': 22.1,
+                    'profit_margin': 0.25,
+                    'roe': 0.45,
+                    'debt_equity': 1.8,
+                    'current_ratio': 1.1,
+                },
+                'valuation': {
+                    'dcf_value': demo_info['current_price'] * 1.15,
+                    'relative_value': demo_info['current_price'] * 1.08,
+                    'fair_value_low': demo_info['current_price'] * 0.9,
+                    'fair_value_mid': demo_info['current_price'] * 1.1,
+                    'fair_value_high': demo_info['current_price'] * 1.3,
+                },
+                'risk_assessment': {
+                    'altman_z': 3.2,
+                    'altman_zone': '安全區',
+                    'piotroski_f': 7,
+                    'piotroski_rating': '財務健康',
+                    'risk_level': '低風險',
+                },
+                'recommendation': {
+                    'rating': '買入',
+                    'target_price': demo_info['current_price'] * 1.15,
+                    'upside': 0.15,
+                },
+                'football_field': [
+                    {'method': 'DCF', 'low': demo_info['current_price'] * 0.95, 'mid': demo_info['current_price'] * 1.15, 'high': demo_info['current_price'] * 1.35},
+                    {'method': 'P/E', 'low': demo_info['current_price'] * 0.9, 'mid': demo_info['current_price'] * 1.08, 'high': demo_info['current_price'] * 1.25},
+                    {'method': 'EV/EBITDA', 'low': demo_info['current_price'] * 0.88, 'mid': demo_info['current_price'] * 1.05, 'high': demo_info['current_price'] * 1.22},
+                ],
+                'analysis_summary': f'[DEMO 模式] {demo_info["company_name"]} 是一家領先的{demo_info["industry"]}公司。基於 DCF 和相對估值分析，目標價為 ${demo_info["current_price"] * 1.15:.2f}，相對當前價格有 15% 的上漲空間。',
+                'demo_mode': True,
+            })
+
         # Step 1: 數據獲取 (Data Agent)
         stock_data = data_agent.fetch_stock_data(ticker)
         if stock_data.get('error'):
+            # 如果是限流錯誤，建議使用 demo 模式
+            if '限流' in stock_data['error']:
+                return jsonify({
+                    'error': stock_data['error'],
+                    'hint': '可以輸入 "DEMO" 來測試系統功能'
+                }), 404
             return jsonify({'error': stock_data['error']}), 404
 
         # Step 2: 風險評分 (Forensic Agent)
