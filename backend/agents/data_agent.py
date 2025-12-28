@@ -3,11 +3,29 @@ Data Agent - 負責從 Yahoo Finance 獲取股票數據
 """
 import yfinance as yf
 import pandas as pd
+import time
+import random
 from typing import Dict, Any, Optional
 
 
 class DataAgent:
     """數據獲取 Agent - 獲取財務報表與市場數據"""
+
+    def _retry_with_backoff(self, func, max_retries=3):
+        """帶有指數退避的重試機制"""
+        for attempt in range(max_retries):
+            try:
+                # 每次請求前隨機延遲 1-3 秒
+                time.sleep(random.uniform(1, 3))
+                return func()
+            except Exception as e:
+                if '429' in str(e) or 'Too Many Requests' in str(e):
+                    wait_time = (2 ** attempt) * 5 + random.uniform(1, 3)
+                    print(f"Rate limited, waiting {wait_time:.1f}s before retry {attempt + 1}/{max_retries}")
+                    time.sleep(wait_time)
+                else:
+                    raise e
+        raise Exception("Max retries exceeded for Yahoo Finance API")
 
     def fetch_stock_data(self, ticker: str) -> Dict[str, Any]:
         """
@@ -16,7 +34,12 @@ class DataAgent:
         """
         try:
             stock = yf.Ticker(ticker)
-            info = stock.info
+
+            # 使用重試機制獲取 info
+            def get_info():
+                return stock.info
+
+            info = self._retry_with_backoff(get_info)
 
             # 檢查股票是否存在
             if not info or info.get('regularMarketPrice') is None:
