@@ -22,8 +22,10 @@ function App() {
       } else {
         setResult(data)
       }
-    } catch (err) {
-      setError('無法連接到伺服器，請確認後端服務是否運行中')
+    } catch (err: any) {
+      console.error('API Error:', err)
+      const errorMsg = err?.response?.data?.error || err?.message || '未知錯誤'
+      setError(`連接失敗: ${errorMsg} (API: https://valuation-agent-1.onrender.com)`)
     } finally {
       setLoading(false)
     }
