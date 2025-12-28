@@ -11,25 +11,31 @@ from typing import Dict, Any, Optional
 class DataAgent:
     """數據獲取 Agent - 獲取財務報表與市場數據"""
 
-    def _retry_with_backoff(self, func, max_retries=5):
-        """帶有指數退避的重試機制"""
+    def _retry_with_backoff(self, func, max_retries=3, quick_mode=False):
+        """
+        帶有指數退避的重試機制
+        quick_mode: 快速模式，減少延遲以適應 Render 30 秒超時
+        """
         last_error = None
         for attempt in range(max_retries):
             try:
-                # 每次請求前隨機延遲 2-5 秒
-                time.sleep(random.uniform(2, 5))
+                # 首次請求不延遲，後續請求短延遲
+                if attempt > 0:
+                    delay = random.uniform(0.5, 1.5) if quick_mode else random.uniform(1, 2)
+                    time.sleep(delay)
                 return func()
             except Exception as e:
                 last_error = e
                 error_str = str(e)
                 if '429' in error_str or 'Too Many Requests' in error_str:
-                    wait_time = (2 ** attempt) * 8 + random.uniform(2, 5)
+                    # 快速退避以適應超時限制
+                    wait_time = min((2 ** attempt) * 2 + random.uniform(1, 2), 8)
                     print(f"Rate limited, waiting {wait_time:.1f}s before retry {attempt + 1}/{max_retries}")
                     time.sleep(wait_time)
                 else:
                     raise e
         # 明確標記為限流錯誤
-        raise Exception(f"RATE_LIMITED: Yahoo Finance API 暫時限流，請稍後再試 (原始錯誤: {last_error})")
+        raise Exception(f"RATE_LIMITED: Yahoo Finance API 暫時限流，請稍後再試")
 
     def fetch_stock_data(self, ticker: str) -> Dict[str, Any]:
         """
@@ -253,7 +259,7 @@ class DataAgent:
                     raise Exception("429 Too Many Requests - Empty response")
                 return info
 
-            info = self._retry_with_backoff(get_info, max_retries=3)
+            info = self._retry_with_backoff(get_info, max_retries=2, quick_mode=True)
 
             return {
                 'ticker': ticker,
