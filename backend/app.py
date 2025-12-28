@@ -13,9 +13,8 @@ from config import Config
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# CORS 配置 - 允許 Vercel 前端域名
-cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
-CORS(app, origins=cors_origins, supports_credentials=True)
+# CORS 配置 - 允許所有來源
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 
 # 初始化 Agents
 data_agent = DataAgent()
