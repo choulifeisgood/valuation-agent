@@ -11,21 +11,25 @@ from typing import Dict, Any, Optional
 class DataAgent:
     """數據獲取 Agent - 獲取財務報表與市場數據"""
 
-    def _retry_with_backoff(self, func, max_retries=3):
+    def _retry_with_backoff(self, func, max_retries=5):
         """帶有指數退避的重試機制"""
+        last_error = None
         for attempt in range(max_retries):
             try:
-                # 每次請求前隨機延遲 1-3 秒
-                time.sleep(random.uniform(1, 3))
+                # 每次請求前隨機延遲 2-5 秒
+                time.sleep(random.uniform(2, 5))
                 return func()
             except Exception as e:
-                if '429' in str(e) or 'Too Many Requests' in str(e):
-                    wait_time = (2 ** attempt) * 5 + random.uniform(1, 3)
+                last_error = e
+                error_str = str(e)
+                if '429' in error_str or 'Too Many Requests' in error_str:
+                    wait_time = (2 ** attempt) * 8 + random.uniform(2, 5)
                     print(f"Rate limited, waiting {wait_time:.1f}s before retry {attempt + 1}/{max_retries}")
                     time.sleep(wait_time)
                 else:
                     raise e
-        raise Exception("Max retries exceeded for Yahoo Finance API")
+        # 明確標記為限流錯誤
+        raise Exception(f"RATE_LIMITED: Yahoo Finance API 暫時限流，請稍後再試 (原始錯誤: {last_error})")
 
     def fetch_stock_data(self, ticker: str) -> Dict[str, Any]:
         """
@@ -37,12 +41,19 @@ class DataAgent:
 
             # 使用重試機制獲取 info
             def get_info():
-                return stock.info
+                info = stock.info
+                # 檢查是否被限流（info 會是空的或缺少關鍵字段）
+                if not info or len(info) < 5:
+                    raise Exception("429 Too Many Requests - Empty response")
+                return info
 
             info = self._retry_with_backoff(get_info)
 
-            # 檢查股票是否存在
+            # 檢查股票是否存在（此時已經通過重試機制，info 應該有數據）
             if not info or info.get('regularMarketPrice') is None:
+                # 再次檢查是否是限流導致的空數據
+                if not info or len(info) < 10:
+                    return {'error': f'Yahoo Finance API 暫時無法獲取 {ticker} 的數據，請稍後再試'}
                 return {'error': f'找不到股票代碼: {ticker}'}
 
             # 獲取財務報表
@@ -75,7 +86,10 @@ class DataAgent:
             }
 
         except Exception as e:
-            return {'error': f'獲取數據時發生錯誤: {str(e)}'}
+            error_str = str(e)
+            if 'RATE_LIMITED' in error_str or '429' in error_str or 'Too Many Requests' in error_str:
+                return {'error': f'Yahoo Finance API 暫時限流，請等待 1-2 分鐘後再試'}
+            return {'error': f'獲取數據時發生錯誤: {error_str}'}
 
     def _get_income_statement(self, stock: yf.Ticker) -> Dict[str, Any]:
         """獲取損益表數據"""
@@ -231,7 +245,15 @@ class DataAgent:
         """快速獲取即時報價"""
         try:
             stock = yf.Ticker(ticker)
-            info = stock.info
+
+            # 使用重試機制
+            def get_info():
+                info = stock.info
+                if not info or len(info) < 5:
+                    raise Exception("429 Too Many Requests - Empty response")
+                return info
+
+            info = self._retry_with_backoff(get_info, max_retries=3)
 
             return {
                 'ticker': ticker,
@@ -243,7 +265,10 @@ class DataAgent:
                 'market_cap': info.get('marketCap'),
             }
         except Exception as e:
-            return {'error': str(e)}
+            error_str = str(e)
+            if 'RATE_LIMITED' in error_str or '429' in error_str or 'Too Many Requests' in error_str:
+                return {'error': 'Yahoo Finance API 暫時限流，請等待 1-2 分鐘後再試'}
+            return {'error': error_str}
 
     def get_peer_multiples(self, peers: list) -> Dict[str, Dict]:
         """獲取同業公司的估值倍數"""
