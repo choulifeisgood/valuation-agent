@@ -60,7 +60,7 @@ function App() {
             <LoadingSpinner />
             <p className="mt-4 text-slate-600">正在分析股票數據...</p>
             <p className="mt-2 text-sm text-slate-500">
-              這可能需要幾秒鐘，請稍候
+              首次請求可能需要 30-60 秒（伺服器喚醒中），請耐心等候
             </p>
           </div>
         )}
