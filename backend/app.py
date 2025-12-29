@@ -80,6 +80,7 @@ def analyze_stock():
         # Demo 模式 - 返回模擬報告
         if use_demo:
             demo_info = get_demo_data(ticker if ticker != 'DEMO' else 'DEMO')
+            price = demo_info['current_price']
             return jsonify({
                 'basic_info': {
                     'ticker': demo_info['ticker'],
@@ -87,44 +88,100 @@ def analyze_stock():
                     'sector': demo_info['sector'],
                     'industry': demo_info['industry'],
                     'currency': 'USD',
-                    'current_price': demo_info['current_price'],
+                    'current_price': price,
                     'market_cap': demo_info['market_cap'],
+                    'analysis_date': '2025-12-28',
                 },
                 'key_metrics': {
-                    'pe_ratio': 28.5,
-                    'pb_ratio': 12.3,
-                    'ps_ratio': 7.8,
-                    'ev_ebitda': 22.1,
-                    'profit_margin': 0.25,
-                    'roe': 0.45,
-                    'debt_equity': 1.8,
-                    'current_ratio': 1.1,
+                    'valuation_ratios': {
+                        'pe_ratio': 28.5,
+                        'forward_pe': 25.2,
+                        'pb_ratio': 12.3,
+                        'ps_ratio': 7.8,
+                        'ev_ebitda': 22.1,
+                        'ev_revenue': 8.5,
+                    },
+                    'profitability': {
+                        'profit_margin': '25.0%',
+                        'operating_margin': '30.2%',
+                        'ebitda_margin': '35.5%',
+                        'roe': '45.0%',
+                        'roa': '22.0%',
+                    },
+                    'financial_health': {
+                        'debt_equity': 1.8,
+                        'current_ratio': 1.1,
+                    },
+                    'growth': {
+                        'revenue_growth': '12.5%',
+                        'earnings_growth': '15.8%',
+                    },
+                    'yield': {
+                        'dividend_yield': '0.5%',
+                        'fcf_yield': '3.2%',
+                    },
                 },
                 'valuation': {
-                    'dcf_value': demo_info['current_price'] * 1.15,
-                    'relative_value': demo_info['current_price'] * 1.08,
-                    'fair_value_low': demo_info['current_price'] * 0.9,
-                    'fair_value_mid': demo_info['current_price'] * 1.1,
-                    'fair_value_high': demo_info['current_price'] * 1.3,
+                    'dcf_valuation': {
+                        'intrinsic_value': price * 1.15,
+                        'wacc': '10.5%',
+                        'terminal_growth': '2.5%',
+                        'fcf_growth_assumed': '8.0%',
+                    },
+                    'relative_valuation': {
+                        'pe_implied': price * 1.08,
+                        'ev_ebitda_implied': price * 1.05,
+                        'ev_revenue_implied': price * 1.02,
+                        'peer_median_pe': 26.5,
+                        'peer_median_ev_ebitda': 20.0,
+                    },
+                    'fair_value_range': {
+                        'low': price * 0.9,
+                        'mid': price * 1.1,
+                        'high': price * 1.3,
+                    },
                 },
                 'risk_assessment': {
-                    'altman_z': 3.2,
-                    'altman_zone': '安全區',
-                    'piotroski_f': 7,
-                    'piotroski_rating': '財務健康',
-                    'risk_level': '低風險',
+                    'altman_z_score': {
+                        'score': 3.2,
+                        'zone': '安全區',
+                        'interpretation': '財務狀況良好，破產風險極低',
+                    },
+                    'piotroski_f_score': {
+                        'score': 7,
+                        'max_score': 9,
+                        'rating': '財務健康',
+                        'interpretation': '公司財務體質強健',
+                    },
+                    'overall_risk': {
+                        'level': '低風險',
+                        'description': '公司財務穩健，估值合理',
+                    },
+                    'risk_flags': [],
+                    'wacc_adjustment': None,
                 },
                 'recommendation': {
                     'rating': '買入',
-                    'target_price': demo_info['current_price'] * 1.15,
+                    'description': '基於 DCF 和相對估值分析，股價具有上漲空間',
                     'upside': 0.15,
+                    'current_price': price,
+                    'target_price': price * 1.15,
                 },
-                'football_field': [
-                    {'method': 'DCF', 'low': demo_info['current_price'] * 0.95, 'mid': demo_info['current_price'] * 1.15, 'high': demo_info['current_price'] * 1.35},
-                    {'method': 'P/E', 'low': demo_info['current_price'] * 0.9, 'mid': demo_info['current_price'] * 1.08, 'high': demo_info['current_price'] * 1.25},
-                    {'method': 'EV/EBITDA', 'low': demo_info['current_price'] * 0.88, 'mid': demo_info['current_price'] * 1.05, 'high': demo_info['current_price'] * 1.22},
-                ],
-                'analysis_summary': f'[DEMO 模式] {demo_info["company_name"]} 是一家領先的{demo_info["industry"]}公司。基於 DCF 和相對估值分析，目標價為 ${demo_info["current_price"] * 1.15:.2f}，相對當前價格有 15% 的上漲空間。',
+                'football_field': {
+                    'current_price': price,
+                    'bars': [
+                        {'method': 'DCF 估值', 'low': price * 0.95, 'mid': price * 1.15, 'high': price * 1.35},
+                        {'method': 'P/E 倍數', 'low': price * 0.9, 'mid': price * 1.08, 'high': price * 1.25},
+                        {'method': 'EV/EBITDA', 'low': price * 0.88, 'mid': price * 1.05, 'high': price * 1.22},
+                    ],
+                },
+                'methodology': {
+                    'dcf_weight': 0.6,
+                    'relative_weight': 0.4,
+                    'note': 'DCF 採用 FCFF 模型，相對估值採用同業中位數',
+                },
+                'analysis_summary': f'[DEMO 模式] {demo_info["company_name"]} 是一家領先的{demo_info["industry"]}公司。基於 DCF 和相對估值分析，目標價為 ${price * 1.15:.2f}，相對當前價格有 15% 的上漲空間。',
+                'disclaimer': '此為展示用模擬數據，僅供系統功能測試，不構成投資建議。',
                 'demo_mode': True,
             })
 
