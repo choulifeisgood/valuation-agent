@@ -161,9 +161,9 @@ def analyze_stock():
                     'wacc_adjustment': None,
                 },
                 'recommendation': {
-                    'rating': '買入',
+                    'rating': 'BUY',
                     'description': '基於 DCF 和相對估值分析，股價具有上漲空間',
-                    'upside': 0.15,
+                    'upside': 15.0,
                     'current_price': price,
                     'target_price': price * 1.15,
                 },
