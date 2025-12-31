@@ -58,7 +58,7 @@ export default function FootballFieldChart({ data, currency }: FootballFieldChar
   return (
     <div className="space-y-4">
       {/* Chart */}
-      <div className="relative pt-8 pb-4">
+      <div className="relative pt-8 pb-4 ml-28">
         {/* Current Price Line */}
         <div
           className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
@@ -76,7 +76,7 @@ export default function FootballFieldChart({ data, currency }: FootballFieldChar
           {bars.map((bar, index) => (
             <div key={index} className="relative h-10">
               {/* Method Label */}
-              <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 text-sm text-slate-600 whitespace-nowrap w-24 text-right">
+              <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-700 whitespace-nowrap w-24 text-right">
                 {bar.method}
               </div>
 
