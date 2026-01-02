@@ -7,7 +7,7 @@ const API_BASE = 'https://valuation-agent-1.onrender.com/api'
 // 創建 axios 實例
 const apiClient = axios.create({
   baseURL: API_BASE,
-  timeout: 120000, // 120 秒超時（Render 免費方案喚醒需要時間）
+  timeout: 180000, // 180 秒超時（Render 免費方案喚醒 + Yahoo Finance API 需要時間）
   headers: {
     'Content-Type': 'application/json',
   },

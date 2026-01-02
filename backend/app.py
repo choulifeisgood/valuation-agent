@@ -58,6 +58,15 @@ def get_demo_data(ticker):
             'current_price': 425.00,
             'market_cap': 3150000000000,
             'beta': 0.9,
+        },
+        'TSLA': {
+            'ticker': 'TSLA',
+            'company_name': 'Tesla, Inc.',
+            'sector': 'Consumer Cyclical',
+            'industry': 'Auto Manufacturers',
+            'current_price': 250.00,
+            'market_cap': 800000000000,
+            'beta': 2.3,
         }
     }
     return demo_stocks.get(ticker, demo_stocks['DEMO'])
