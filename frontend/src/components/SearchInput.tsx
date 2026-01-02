@@ -1,17 +1,18 @@
 import { useState, KeyboardEvent } from 'react'
 
 interface SearchInputProps {
-  onSearch: (ticker: string) => void
+  onSearch: (ticker: string, useDemo: boolean) => void
   disabled?: boolean
 }
 
 export default function SearchInput({ onSearch, disabled }: SearchInputProps) {
   const [value, setValue] = useState('')
+  const [useDEMO, setUseDEMO] = useState(false)
 
   const handleSubmit = () => {
     const ticker = value.trim().toUpperCase()
     if (ticker) {
-      onSearch(ticker)
+      onSearch(ticker, useDEMO)
     }
   }
 
@@ -55,6 +56,23 @@ export default function SearchInput({ onSearch, disabled }: SearchInputProps) {
         >
           {disabled ? '分析中...' : '開始分析'}
         </button>
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={useDEMO}
+            onChange={(e) => setUseDEMO(e.target.checked)}
+            disabled={disabled}
+            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+          />
+          <span className="text-sm text-slate-600">
+            DEMO 模式
+          </span>
+        </label>
+        <span className="text-xs text-slate-400">
+          (使用模擬數據，避免 API 限流)
+        </span>
       </div>
       <p className="mt-2 text-center text-sm text-slate-500">
         按 Enter 或點擊按鈕開始分析

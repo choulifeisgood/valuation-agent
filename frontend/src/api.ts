@@ -13,8 +13,8 @@ const apiClient = axios.create({
   },
 })
 
-export async function analyzeStock(ticker: string): Promise<AnalysisResult> {
-  const response = await apiClient.post('/analyze', { ticker })
+export async function analyzeStock(ticker: string, demo: boolean = false): Promise<AnalysisResult> {
+  const response = await apiClient.post('/analyze', { ticker, demo })
   return response.data
 }
 

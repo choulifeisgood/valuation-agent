@@ -10,13 +10,13 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<AnalysisResult | null>(null)
 
-  const handleSearch = async (ticker: string) => {
+  const handleSearch = async (ticker: string, useDemo: boolean = false) => {
     setLoading(true)
     setError(null)
     setResult(null)
 
     try {
-      const data = await analyzeStock(ticker)
+      const data = await analyzeStock(ticker, useDemo)
       if (data.error) {
         setError(data.error)
       } else {
