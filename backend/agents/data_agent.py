@@ -5,11 +5,36 @@ import yfinance as yf
 import pandas as pd
 import time
 import random
+from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
+
+# 內存緩存：儲存成功獲取的股票數據
+_cache: Dict[str, Dict[str, Any]] = {}
+_cache_expiry: Dict[str, datetime] = {}
+CACHE_DURATION = timedelta(hours=1)  # 緩存 1 小時
 
 
 class DataAgent:
     """數據獲取 Agent - 獲取財務報表與市場數據"""
+
+    def _get_from_cache(self, ticker: str) -> Optional[Dict[str, Any]]:
+        """從緩存獲取數據"""
+        if ticker in _cache and ticker in _cache_expiry:
+            if datetime.now() < _cache_expiry[ticker]:
+                print(f"[Cache Hit] {ticker}")
+                return _cache[ticker]
+            else:
+                # 緩存過期，清除
+                del _cache[ticker]
+                del _cache_expiry[ticker]
+        return None
+
+    def _save_to_cache(self, ticker: str, data: Dict[str, Any]):
+        """儲存數據到緩存"""
+        if not data.get('error'):
+            _cache[ticker] = data
+            _cache_expiry[ticker] = datetime.now() + CACHE_DURATION
+            print(f"[Cache Save] {ticker}")
 
     def _retry_with_backoff(self, func, max_retries=3, quick_mode=False):
         """
@@ -42,7 +67,15 @@ class DataAgent:
         獲取完整股票數據
         包含: 基本資料、財務報表、市場數據、同業列表
         """
+        # 先檢查緩存
+        cached = self._get_from_cache(ticker)
+        if cached:
+            return cached
+
         try:
+            # 添加隨機延遲，減少被限流機會
+            time.sleep(random.uniform(0.5, 1.5))
+
             stock = yf.Ticker(ticker)
 
             # 使用重試機制獲取 info
@@ -73,7 +106,7 @@ class DataAgent:
             # 獲取同業公司
             peers = self._get_peers(stock, info)
 
-            return {
+            result = {
                 'ticker': ticker,
                 'company_name': info.get('longName', info.get('shortName', ticker)),
                 'sector': info.get('sector', 'N/A'),
@@ -90,6 +123,10 @@ class DataAgent:
                 'metrics': metrics,
                 'peers': peers
             }
+
+            # 儲存到緩存
+            self._save_to_cache(ticker, result)
+            return result
 
         except Exception as e:
             error_str = str(e)
